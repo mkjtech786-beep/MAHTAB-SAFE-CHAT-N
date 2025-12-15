@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Chat</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+/* ----------- FIREBASE ---------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyAqfguS1ucAtklcl06eB1JIWQr46XMpe7g",
+  authDomain: "safe-chat-c0b9c.firebaseapp.com",
+  databaseURL: "https://safe-chat-c0b9c-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "safe-chat-c0b9c",
+  storageBucket: "safe-chat-c0b9c.firebasestorage.app",
+  messagingSenderId: "119640275300",
+  appId: "1:119640275300:web:20ae984f4af1ffe6a62271"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+/* ----------- VARIABLES ---------------- */
+let currentUser = null;
+
+/* ----------- REALTIME USERS LIST ---------------- */
+const usersDiv = document.getElementById("users-list");
+
+function updateUsersList() {
+  onValue(ref(db, "chats"), snap => {
+    usersDiv.innerHTML = "";
+    snap.forEach(child => {
+      const uid = child.key;
+      const userData = child.val();
+
+      const d = document.createElement("div");
+      d.className = "user";
+
+      // Username
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "username";
+      nameSpan.innerText = uid;
+      d.appendChild(nameSpan);
+
+      // Online / Blocked indicator
+      const online = document.createElement("span");
+      online.className = "online";
+      if (userData.blocked) {
+        online.style.background = "gray";
+        online.title = "Blocked";
+      } else if (userData.lastActive && (Date.now() - userData.lastActive < 60000)) {
+        online.style.background = "lime";
+        online.title = "Online";
+      } else {
+        online.style.background = "red";
+        online.title = "Offline";
+      }
+      d.appendChild(online);
+
+      // Block/Unblock button
+      const blockBtn = document.createElement("button");
+      blockBtn.className = "block-btn";
+      blockBtn.innerText = userData.blocked ? "Unblock" : "Block";
+      blockBtn.onclick = () => update(ref(db, "chats/" + uid), { blocked: !userData.blocked });
+      d.appendChild(blockBtn);
+
+      // Open chat click
+      d.onclick = (e) => { if (!e.target.classList.contains("block-btn")) openChat(uid); };
+
+      usersDiv.appendChild(d);
+    });
+  });
+}
+
+updateUsersList();
+
+/* ----------- OPEN CHAT ---------------- */
+const msgsBox = document.getElementById("msgs");
+
+window.openChat = (uid) => {
+  currentUser = uid;
+  document.getElementById("chatName").innerText = uid;
+
+  onValue(ref(db, "chats/" + uid), snap => {
+    msgsBox.innerHTML = "";
+    snap.forEach(m => {
+      const val = m.val();
+      if (!val || !val.text) return; // skip non-message objects
+      const d = document.createElement("div");
+      d.className = val.from === "admin" ? "msg admin" : "msg user";
+      d.innerText = val.text;
+      msgsBox.appendChild(d);
+    });
+    msgsBox.scrollTop = msgsBox.scrollHeight;
+  });
+};
+
+/* ----------- SEND MESSAGE ---------------- */
+window.sendMsg = () => {
+  if (!currentUser) return alert("User select karo");
+  const input = document.getElementById("text");
+  if (!input.value) return;
+
+  push(ref(db, "chats/" + currentUser), {
+    from: "admin",
+    text: input.value,
+    time: Date.now()
+  });
+
+  input.value = "";
+};
+</script>
+
+<style>
+body {
+  margin: 0;
+  font-family: Poppins;
+  background: #0b0a1a;
+  color: #fff;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Header */
+.header {
+  padding: 14px;
+  background: #120c22;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Users List */
+.users-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  background: #1a0f3f;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  margin-bottom: 6px;
+  background: #2a1b55;
+  border-left: 6px solid #ff2f6d;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.user:hover { background: #3b2a7a; }
+
+.user span.username { font-weight: 500; }
+
+.online {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.block-btn {
+  margin-left: 6px;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 6px;
+  background: #ff2f6d;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Chat Window */
+.chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+.chat .header {
+  background: #120c22;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 0 10px;
+}
+
+.msgs {
+  flex: 1;
+  padding: 14px;
+  overflow-y: auto;
+  background: #120c22;
+  border-radius: 12px;
+  margin: 10px;
+}
+
+.msg {
+  background: linear-gradient(135deg,#ff2f6d,#ff8a00);
+  padding: 10px;
+  border-radius: 14px;
+  margin-bottom: 8px;
+  max-width: 70%;
+  word-break: break-word;
+}
+
+.msg.user {
+  background: linear-gradient(135deg,#1e90ff,#00d4ff);
+  margin-left: auto;
+}
+
+.msg.admin {
+  background: linear-gradient(135deg,#ff2f6d,#ff8a00);
+  margin-right: auto;
+}
+
+/* Input Area */
+.input {
+  display: flex;
+  padding: 10px;
+  margin: 10px;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 20px;
+  border: none;
+  outline: none;
+}
+
+button {
+  margin-left: 10px;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  background: #ff2f6d;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+  <div class="header">
+    <div>Admin Chat</div>
+    <div class="users-container" id="users-list"></div>
+  </div>
+
+  <div class="chat">
+    <div class="header">Chat with: <span id="chatName">Select User</span></div>
+    <div class="msgs" id="msgs"></div>
+
+    <div class="input">
+      <input id="text" placeholder="Type message..." />
+      <button onclick="sendMsg()">➤</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
