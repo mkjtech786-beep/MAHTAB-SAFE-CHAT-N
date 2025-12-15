@@ -40,7 +40,6 @@ function updateUsersList() {
 
       const d = document.createElement("div");
       d.className = "user";
-      d.id = "user-" + uid; // unique id for highlighting
 
       // Username
       const nameSpan = document.createElement("span");
@@ -67,35 +66,42 @@ function updateUsersList() {
       const blockBtn = document.createElement("button");
       blockBtn.className = "block-btn";
       blockBtn.innerText = userData.blocked ? "Unblock" : "Block";
-      blockBtn.onclick = (e) => {
-        e.stopPropagation();
-        update(ref(db, "chats/" + uid), { blocked: !userData.blocked });
-      };
+      blockBtn.onclick = () => update(ref(db, "chats/" + uid), { blocked: !userData.blocked });
       d.appendChild(blockBtn);
 
       // Open chat click
-      d.onclick = () => openChat(uid);
+      d.onclick = (e) => { if (!e.target.classList.contains("block-btn")) openChat(uid); };
 
       usersDiv.appendChild(d);
-
-      // --- NEW MESSAGE NOTIFICATION ---
-      if (userData.messages) {
-        const msgsArr = Object.values(userData.messages);
-        const lastMsg = msgsArr[msgsArr.length - 1];
-        if (lastMsg && lastMsg.from !== "admin") {
-          // Flash animation
-          d.classList.add("new-msg-flash");
-
-          // Play notification sound
-          const audio = new Audio("https://www.myinstants.com/media/sounds/notification.mp3");
-          audio.play();
-        }
-      }
     });
   });
 }
 
 updateUsersList();
+
+/* ----------- GLOBAL NEW MESSAGE NOTIFICATION ---------------- */
+onValue(ref(db, "chats"), snap => {
+  snap.forEach(child => {
+    const uid = child.key;
+    const userData = child.val();
+
+    if (!userData) return;
+
+    Object.entries(userData).forEach(([msgId, msg]) => {
+      if (msg.from === "user" && !msg.seenByAdmin) {
+        // Mark as seen by admin
+        update(ref(db, `chats/${uid}/${msgId}`), { seenByAdmin: true });
+
+        // Show alert
+        alert(`New message from ${uid}: ${msg.text}`);
+
+        // Play sound notification
+        const audio = new Audio("https://www.soundjay.com/buttons/sounds/button-09.mp3"); // Example sound URL
+        audio.play();
+      }
+    });
+  });
+});
 
 /* ----------- OPEN CHAT ---------------- */
 const msgsBox = document.getElementById("msgs");
@@ -104,14 +110,17 @@ window.openChat = (uid) => {
   currentUser = uid;
   document.getElementById("chatName").innerText = uid;
 
-  const userDiv = document.getElementById("user-" + uid);
-  if(userDiv) userDiv.classList.remove("new-msg-flash"); // remove highlight on open
-
   onValue(ref(db, "chats/" + uid), snap => {
     msgsBox.innerHTML = "";
     snap.forEach(m => {
       const val = m.val();
-      if (!val || !val.text) return; // skip non-message objects
+      if (!val || !val.text) return;
+
+      // Mark as seen when opening chat
+      if (val.from === "user" && !val.seenByAdmin) {
+        update(ref(db, `chats/${uid}/${m.key}`), { seenByAdmin: true });
+      }
+
       const d = document.createElement("div");
       d.className = val.from === "admin" ? "msg admin" : "msg user";
       d.innerText = val.text;
@@ -123,7 +132,7 @@ window.openChat = (uid) => {
 
 /* ----------- SEND MESSAGE ---------------- */
 window.sendMsg = () => {
-  if (!currentUser) return alert("User select karo");
+  if (!currentUser) return alert("Please select a user first");
   const input = document.getElementById("text");
   if (!input.value) return;
 
@@ -277,17 +286,6 @@ button {
   font-size: 18px;
   cursor: pointer;
 }
-
-/* New Message Flash Animation */
-@keyframes flashBorder {
-  0% { border-left-color: #00ff00; }
-  50% { border-left-color: #ff2f6d; }
-  100% { border-left-color: #00ff00; }
-}
-
-.new-msg-flash {
-  animation: flashBorder 1s infinite;
-}
 </style>
 </head>
 
@@ -309,4 +307,4 @@ button {
   </div>
 </div>
 </body>
-</html>
+  </html>
