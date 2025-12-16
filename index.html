@@ -79,30 +79,6 @@ function updateUsersList() {
 
 updateUsersList();
 
-/* ----------- GLOBAL NEW MESSAGE NOTIFICATION ---------------- */
-onValue(ref(db, "chats"), snap => {
-  snap.forEach(child => {
-    const uid = child.key;
-    const userData = child.val();
-
-    if (!userData) return;
-
-    Object.entries(userData).forEach(([msgId, msg]) => {
-      if (msg.from === "user" && !msg.seenByAdmin) {
-        // Mark as seen by admin
-        update(ref(db, `chats/${uid}/${msgId}`), { seenByAdmin: true });
-
-        // Show alert
-        alert(`New message from ${uid}: ${msg.text}`);
-
-        // Play sound notification
-        const audio = new Audio("https://www.soundjay.com/buttons/sounds/button-09.mp3"); // Example sound URL
-        audio.play();
-      }
-    });
-  });
-});
-
 /* ----------- OPEN CHAT ---------------- */
 const msgsBox = document.getElementById("msgs");
 
@@ -114,16 +90,33 @@ window.openChat = (uid) => {
     msgsBox.innerHTML = "";
     snap.forEach(m => {
       const val = m.val();
-      if (!val || !val.text) return;
-
-      // Mark as seen when opening chat
-      if (val.from === "user" && !val.seenByAdmin) {
-        update(ref(db, `chats/${uid}/${m.key}`), { seenByAdmin: true });
-      }
-
+      if (!val || !val.text) return; // skip non-message objects
       const d = document.createElement("div");
       d.className = val.from === "admin" ? "msg admin" : "msg user";
+
+      // Message text
       d.innerText = val.text;
+
+      // Time display in 12-hour format
+      if (val.time) {
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "msg-time";
+        const date = new Date(val.time);
+
+        let hours = date.getHours();
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; // 0 ko 12 banado
+
+        timeSpan.innerText = ` ${hours}:${minutes} ${ampm}`;
+        timeSpan.style.fontSize = "10px";
+        timeSpan.style.color = "#fff";
+        timeSpan.style.opacity = "0.7";
+        timeSpan.style.marginLeft = "6px";
+        d.appendChild(timeSpan);
+      }
+
       msgsBox.appendChild(d);
     });
     msgsBox.scrollTop = msgsBox.scrollHeight;
@@ -132,7 +125,7 @@ window.openChat = (uid) => {
 
 /* ----------- SEND MESSAGE ---------------- */
 window.sendMsg = () => {
-  if (!currentUser) return alert("Please select a user first");
+  if (!currentUser) return alert("User select karo");
   const input = document.getElementById("text");
   if (!input.value) return;
 
@@ -261,6 +254,14 @@ body {
   margin-right: auto;
 }
 
+/* Message Time */
+.msg-time {
+  font-size: 10px;
+  color: #fff;
+  opacity: 0.7;
+  margin-left: 6px;
+}
+
 /* Input Area */
 .input {
   display: flex;
@@ -307,4 +308,4 @@ button {
   </div>
 </div>
 </body>
-  </html>
+</html>
