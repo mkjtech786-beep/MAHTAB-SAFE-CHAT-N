@@ -93,7 +93,7 @@ window.openChat = uid => {
     msgsBox.innerHTML = "";
     snap.forEach(m => {
       const val = m.val();
-      if (!val || (!val.text && !val.voice)) return;
+      if (!val || (!val.text && !val.voice && !val.image)) return;
 
       const d = document.createElement("div");
       d.className = "msg " + val.from;
@@ -109,6 +109,18 @@ window.openChat = uid => {
         audio.style.display = "block";
         audio.style.marginTop = "4px";
         d.appendChild(audio);
+      }
+
+      // IMAGE
+      if (val.image) {
+        const img = document.createElement("img");
+        img.src = val.image;
+        img.style.maxWidth = "200px";
+        img.style.borderRadius = "12px";
+        img.style.marginTop = "5px";
+        img.style.cursor = "pointer";
+        img.onclick = () => window.open(val.image, "_blank");
+        d.appendChild(img);
       }
 
       // TIME
@@ -145,6 +157,30 @@ window.sendMsg = () => {
   input.value = "";
 };
 
+/* ----------- SEND IMAGE ---------------- */
+window.sendImage = () => {
+  if (!currentUser) return alert("User select karo");
+  const imageInput = document.getElementById("imageInput");
+  imageInput.click();
+
+  imageInput.onchange = () => {
+    const file = imageInput.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = () => {
+      const base64Image = reader.result;
+      push(ref(db, "chats/" + currentUser), {
+        from: "admin",
+        image: base64Image,
+        time: Date.now()
+      });
+    };
+    imageInput.value = "";
+  };
+};
+
 /* ----------- UNREAD + NOTIFICATION ---------------- */
 onValue(ref(db, "chats"), snap => {
   snap.forEach(userSnap => {
@@ -156,7 +192,7 @@ onValue(ref(db, "chats"), snap => {
           unread: (userSnap.val().unread || 0) + 1
         });
         update(ref(db, "chats/" + uid + "/" + msgSnap.key), { read: true });
-        showNotification(uid, msg.text || "Voice message");
+        showNotification(uid, msg.text || "Voice/Image message");
       }
     });
   });
@@ -235,6 +271,7 @@ body{margin:0;font-family:Poppins;background:#0b0a1a;color:#fff}
 .msg{position:relative;padding:8px 12px;border-radius:16px;margin-bottom:6px;max-width:70%;word-wrap:break-word}
 .msg.user{background:#1e90ff;margin-left:auto;border-bottom-right-radius:0}
 .msg.admin{background:#ff2f6d;margin-right:auto;border-bottom-left-radius:0}
+.msg img{max-width:200px;border-radius:12px;margin-top:5px;cursor:pointer}
 .msg-time{font-size:10px;color:#eee;position:absolute;bottom:2px;right:6px}
 .input{display:flex;align-items:center;padding:10px}
 input{flex:1;padding:10px;border-radius:20px;border:none}
@@ -261,6 +298,7 @@ button{margin-left:8px;border:none;border-radius:50%;width:40px;height:40px;back
     <div class="input">
       <input id="text" placeholder="Type message...">
       <button onclick="sendMsg()">➤</button>
+      <button onclick="sendImage()" title="Send Image">🖼️</button>
 
       <div class="record-ui" id="recordUI">
         <span class="rec-dot"></span>
@@ -268,6 +306,7 @@ button{margin-left:8px;border:none;border-radius:50%;width:40px;height:40px;back
       </div>
 
       <button id="micBtn" class="mic-btn">🎤</button>
+      <input type="file" id="imageInput" accept="image/*" style="display:none">
     </div>
   </div>
 </div>
