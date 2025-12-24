@@ -1,314 +1,251 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Chat</title>
+    <meta charset="UTF-8">
+    <title>MAHTAB ADMIN - LAST SEEN UPDATED</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #050509; --sidebar: #0a0a10; --primary: #00f2fe; --text: #ffffff; }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 300px; background: var(--sidebar); border-right: 1px solid #222; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; font-weight: bold; color: var(--primary); border-bottom: 1px solid #222; letter-spacing: 1px; font-size: 18px; }
+        .user-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
+        .user-item:hover { background: #111; }
+        .user-item.active { background: #161625; border-left: 4px solid var(--primary); }
+        
+        .user-info { display: flex; flex-direction: column; flex: 1; }
+        .user-name { font-weight: 600; font-size: 14px; }
+        .user-status-text { font-size: 11px; color: #888; margin-top: 2px; }
+        .user-status-text.online-label { color: #2ecc71; font-weight: bold; }
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: #444; }
+        .dot.online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+
+        /* Chat Area */
+        .main-chat { flex: 1; display: flex; flex-direction: column; background: #08080e; }
+        .chat-header { padding: 15px; background: #0a0a10; border-bottom: 1px solid #222; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
+        .msgs { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        
+        /* Bubbles */
+        .msg { max-width: 70%; padding: 10px 12px; border-radius: 15px; position: relative; word-wrap: break-word; font-size: 14px; }
+        .msg.admin { align-self: flex-end; background: var(--primary); color: #000; border-bottom-right-radius: 2px; }
+        .msg.user { align-self: flex-start; background: #222; color: #fff; border-bottom-left-radius: 2px; }
+        
+        .msg img { max-width: 100%; border-radius: 10px; display: block; margin: 5px 0; cursor: pointer; }
+        .msg audio { max-width: 250px; margin-top: 5px; height: 32px; border-radius: 20px; outline: none; }
+        .msg.admin audio { filter: invert(1) contrast(2); }
+
+        .msg-time { font-size: 10px; opacity: 0.7; display: block; margin-top: 5px; text-align: right; }
+        
+        /* Input Area */
+        .input-area { padding: 15px; background: #0a0a10; display: flex; gap: 10px; border-top: 1px solid #222; align-items: center; }
+        input[type="text"] { flex: 1; background: #1c1c24; border: none; padding: 12px; border-radius: 10px; color: #fff; outline: none; }
+        
+        .btn { border: none; border-radius: 8px; padding: 10px 15px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .btn-icon { background: #1c1c24; color: #fff; font-size: 18px; }
+        .btn-send { background: var(--primary); color: #000; }
+        .btn-mic { background: #1c1c24; color: var(--primary); font-size: 20px; }
+        .btn-mic.active { background: #ff4757; color: white; animation: pulse 1s infinite; }
+        
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-header">MAHTAB ADMIN</div>
+    <div id="userList" style="overflow-y:auto; flex:1;"></div>
+</div>
+
+<div class="main-chat">
+    <div class="chat-header" id="chatHeader">Select a user to start</div>
+    <div class="msgs" id="msgs"></div>
+    
+    <div class="input-area" id="inputArea" style="display:none;">
+        <button class="btn btn-icon" onclick="document.getElementById('adminFile').click()">📷</button>
+        <input type="file" id="adminFile" accept="image/*" style="display:none">
+        <input type="text" id="adminInput" placeholder="Write a reply...">
+        <button class="btn btn-mic" id="adminMic">🎤</button>
+        <button class="btn btn-send" onclick="sendAdminMsg()">SEND</button>
+    </div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, onValue, push, update, onChildAdded, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
 
-/* ----------- FIREBASE ---------------- */
 const firebaseConfig = {
-  apiKey: "AIzaSyAqfguS1ucAtklcl06eB1JIWQr46XMpe7g",
-  authDomain: "safe-chat-c0b9c.firebaseapp.com",
-  databaseURL: "https://safe-chat-c0b9c-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "safe-chat-c0b9c",
-  storageBucket: "safe-chat-c0b9c.firebasestorage.app",
-  messagingSenderId: "119640275300",
-  appId: "1:119640275300:web:20ae984f4af1ffe6a62271"
+    apiKey: "AIzaSyAqfguS1ucAtklcl06eB1JIWQr46XMpe7g",
+    authDomain: "safe-chat-c0b9c.firebaseapp.com",
+    databaseURL: "https://safe-chat-c0b9c-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "safe-chat-c0b9c",
+    storageBucket: "safe-chat-c0b9c.appspot.com",
+    messagingSenderId: "119640275300",
+    appId: "1:119640275300:web:20ae984f4af1ffe6a62271"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const storage = getStorage(app);
 
-/* ----------- VARIABLES ---------------- */
-let currentUser = null;
-const usersDiv = document.getElementById("users-list");
-const msgsBox = document.getElementById("msgs");
+let currentUserId = null;
+let msgListener = null;
 
-/* ----------- NOTIFICATION ---------------- */
-if (Notification.permission !== "granted") {
-  Notification.requestPermission();
+// --- 12 HOUR TIME FORMATTER ---
+function formatTime(timestamp) {
+    if(!timestamp) return "";
+    const date = new Date(timestamp);
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${hours}:${minutes} ${ampm}`;
 }
-function showNotification(user, msg) {
-  if (document.visibilityState === "visible") return;
-  new Notification("New message", { body: user + ": " + msg });
+
+// --- ADMIN OWN STATUS LOGIC ---
+const adminStatusRef = ref(db, 'status/admin');
+update(adminStatusRef, { state: 'online', last_seen: serverTimestamp() });
+onDisconnect(adminStatusRef).set({ state: 'offline', last_seen: serverTimestamp() });
+
+// --- LIST USERS WITH LAST SEEN ---
+onValue(ref(db, 'status'), (statusSnap) => {
+    const statuses = statusSnap.val() || {};
+    
+    onValue(ref(db, 'chats'), (chatSnap) => {
+        const list = document.getElementById('userList');
+        list.innerHTML = "";
+        
+        chatSnap.forEach(user => {
+            const id = user.key;
+            if(id === 'admin') return;
+
+            const userStat = statuses[id] || {};
+            const isOnline = userStat.state === 'online';
+            const lastTime = userStat.last_seen ? formatTime(userStat.last_seen) : 'Never';
+            
+            const div = document.createElement('div');
+            div.className = `user-item ${currentUserId === id ? 'active' : ''}`;
+            
+            const statusText = isOnline ? 'Online' : `last seen ${lastTime}`;
+            const statusClass = isOnline ? 'online-label' : '';
+
+            div.innerHTML = `
+                <div class="dot ${isOnline ? 'online' : ''}"></div>
+                <div class="user-info">
+                    <span class="user-name">${id}</span>
+                    <span class="user-status-text ${statusClass}">${statusText}</span>
+                </div>
+            `;
+            div.onclick = () => openChat(id);
+            list.appendChild(div);
+        });
+    });
+}, { onlyOnce: false });
+
+// --- OPEN CHAT ---
+function openChat(id) {
+    if(currentUserId === id) return;
+    currentUserId = id;
+    document.getElementById('chatHeader').innerHTML = `<span>Chatting with: <span style="color:var(--primary)">${id}</span></span>`;
+    document.getElementById('inputArea').style.display = "flex";
+    const msgBox = document.getElementById('msgs');
+    msgBox.innerHTML = "";
+    
+    onValue(ref(db, `chats/${id}/messages`), (snap) => {
+        msgBox.innerHTML = "";
+        snap.forEach(child => {
+            renderMessage(child.val(), child.key);
+        });
+    });
 }
 
-/* ----------- USERS LIST + BADGE ---------------- */
-onValue(ref(db, "chats"), snap => {
-  usersDiv.innerHTML = "";
-  snap.forEach(child => {
-    const uid = child.key;
-    const data = child.val();
+function renderMessage(m, key) {
+    const box = document.getElementById('msgs');
+    const d = document.createElement('div');
+    d.className = `msg ${m.from}`;
 
-    const d = document.createElement("div");
-    d.className = "user";
-
-    const name = document.createElement("span");
-    name.className = "username";
-    name.innerText = uid;
-    d.appendChild(name);
-
-    if (data.unread > 0) {
-      const badge = document.createElement("span");
-      badge.className = "unread-badge";
-      badge.innerText = data.unread;
-      d.appendChild(badge);
+    if(m.text) d.innerHTML += `<div>${m.text}</div>`;
+    if(m.image) d.innerHTML += `<img src="${m.image}" onclick="window.open('${m.image}')">`;
+    if(m.voice) {
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = m.voice;
+        audio.preload = "metadata"; 
+        d.appendChild(audio);
     }
 
-    const online = document.createElement("span");
-    online.className = "online";
-    online.style.background =
-      data.blocked ? "gray" :
-      data.lastActive && Date.now() - data.lastActive < 60000 ? "lime" : "red";
-    d.appendChild(online);
+    const time = formatTime(m.time);
+    d.innerHTML += `<span class="msg-time">${time}</span>`;
 
-    const blockBtn = document.createElement("button");
-    blockBtn.className = "block-btn";
-    blockBtn.innerText = data.blocked ? "Unblock" : "Block";
-    blockBtn.onclick = () =>
-      update(ref(db, "chats/" + uid), { blocked: !data.blocked });
-    d.appendChild(blockBtn);
+    box.appendChild(d);
+    box.scrollTop = box.scrollHeight;
 
-    d.onclick = e => {
-      if (!e.target.classList.contains("block-btn")) openChat(uid);
-    };
-
-    usersDiv.appendChild(d);
-  });
-});
-
-/* ----------- OPEN CHAT ---------------- */
-window.openChat = uid => {
-  currentUser = uid;
-  document.getElementById("chatName").innerText = uid;
-  update(ref(db, "chats/" + uid), { unread: 0 });
-
-  onValue(ref(db, "chats/" + uid), snap => {
-    msgsBox.innerHTML = "";
-    snap.forEach(m => {
-      const val = m.val();
-      if (!val || (!val.text && !val.voice && !val.image)) return;
-
-      const d = document.createElement("div");
-      d.className = "msg " + val.from;
-
-      // TEXT
-      if (val.text) d.innerText = val.text;
-
-      // VOICE
-      if (val.voice) {
-        const audio = document.createElement("audio");
-        audio.controls = true;
-        audio.src = val.voice;
-        audio.style.display = "block";
-        audio.style.marginTop = "4px";
-        d.appendChild(audio);
-      }
-
-      // IMAGE
-      if (val.image) {
-        const img = document.createElement("img");
-        img.src = val.image;
-        img.style.maxWidth = "200px";
-        img.style.borderRadius = "12px";
-        img.style.marginTop = "5px";
-        img.style.cursor = "pointer";
-        img.onclick = () => window.open(val.image, "_blank");
-        d.appendChild(img);
-      }
-
-      // TIME
-      if(val.time){
-        const timeSpan = document.createElement("span");
-        timeSpan.className = "msg-time";
-        const date = new Date(val.time);
-        let hours = date.getHours();
-        const minutes = String(date.getMinutes()).padStart(2, "0");
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        hours = hours % 12;
-        hours = hours ? hours : 12;
-        timeSpan.innerText = `${hours}:${minutes} ${ampm}`;
-        d.appendChild(timeSpan);
-      }
-
-      msgsBox.appendChild(d);
-    });
-    msgsBox.scrollTop = msgsBox.scrollHeight;
-  });
-};
-
-/* ----------- SEND MESSAGE ---------------- */
-window.sendMsg = () => {
-  if (!currentUser) return alert("User select karo");
-  const input = document.getElementById("text");
-  if (!input.value) return;
-
-  push(ref(db, "chats/" + currentUser), {
-    from: "admin",
-    text: input.value,
-    time: Date.now()
-  });
-  input.value = "";
-};
-
-/* ----------- SEND IMAGE ---------------- */
-window.sendImage = () => {
-  if (!currentUser) return alert("User select karo");
-  const imageInput = document.getElementById("imageInput");
-  imageInput.click();
-
-  imageInput.onchange = () => {
-    const file = imageInput.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onloadend = () => {
-      const base64Image = reader.result;
-      push(ref(db, "chats/" + currentUser), {
-        from: "admin",
-        image: base64Image,
-        time: Date.now()
-      });
-    };
-    imageInput.value = "";
-  };
-};
-
-/* ----------- UNREAD + NOTIFICATION ---------------- */
-onValue(ref(db, "chats"), snap => {
-  snap.forEach(userSnap => {
-    const uid = userSnap.key;
-    userSnap.forEach(msgSnap => {
-      const msg = msgSnap.val();
-      if (msg && msg.from === "user" && !msg.read && currentUser !== uid) {
-        update(ref(db, "chats/" + uid), {
-          unread: (userSnap.val().unread || 0) + 1
-        });
-        update(ref(db, "chats/" + uid + "/" + msgSnap.key), { read: true });
-        showNotification(uid, msg.text || "Voice/Image message");
-      }
-    });
-  });
-});
-
-/* ----------- VOICE RECORD + TIMER ---------------- */
-let mediaRecorder, audioChunks = [];
-let timer, seconds = 0;
-
-const micBtn = document.getElementById("micBtn");
-const recordUI = document.getElementById("recordUI");
-const recTime = document.getElementById("recTime");
-
-function startTimer() {
-  seconds = 0;
-  recTime.innerText = "00:00";
-  timer = setInterval(() => {
-    seconds++;
-    recTime.innerText =
-      String(Math.floor(seconds / 60)).padStart(2, "0") + ":" +
-      String(seconds % 60).padStart(2, "0");
-  }, 1000);
+    if(m.from === 'user' && m.status !== 'seen') {
+        update(ref(db, `chats/${currentUserId}/messages/${key}`), {status: 'seen'});
+    }
 }
 
-function stopTimer() {
-  clearInterval(timer);
-  recordUI.style.display = "none";
-}
-
-micBtn.onclick = async () => {
-  if (!currentUser) return alert("User select karo");
-
-  if (!mediaRecorder || mediaRecorder.state === "inactive") {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
-    audioChunks = [];
-
-    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(audioChunks, { type: "audio/webm" });
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = () => {
-        push(ref(db, "chats/" + currentUser), {
-          from: "admin",
-          voice: reader.result,
-          time: Date.now()
-        });
-      };
-    };
-
-    mediaRecorder.start();
-    micBtn.textContent = "⏹";
-    recordUI.style.display = "flex";
-    startTimer();
-  } else {
-    mediaRecorder.stop();
-    micBtn.textContent = "🎤";
-    stopTimer();
-  }
+// --- SEND TEXT ---
+window.sendAdminMsg = () => {
+    const input = document.getElementById('adminInput');
+    if(!input.value.trim() || !currentUserId) return;
+    
+    push(ref(db, `chats/${currentUserId}/messages`), {
+        from: 'admin', text: input.value, time: Date.now(), status: 'sent'
+    });
+    input.value = "";
 };
+
+// --- SEND IMAGE ---
+document.getElementById('adminFile').onchange = async (e) => {
+    const file = e.target.files[0];
+    if(!file || !currentUserId) return;
+    try {
+        const path = `admin_media/${Date.now()}_${file.name}`;
+        const snapshot = await uploadBytes(sRef(storage, path), file);
+        const url = await getDownloadURL(snapshot.ref);
+        push(ref(db, `chats/${currentUserId}/messages`), { from: 'admin', image: url, time: Date.now() });
+    } catch(err) { alert("Image Error: " + err.message); }
+};
+
+// --- SEND VOICE ---
+let recorder, chunks = [];
+const micBtn = document.getElementById('adminMic');
+micBtn.onclick = async function() {
+    if (this.classList.contains('active')) {
+        if(recorder) recorder.stop();
+        return;
+    }
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recorder = new MediaRecorder(stream);
+        chunks = [];
+        this.classList.add('active');
+        recorder.ondataavailable = (e) => chunks.push(e.data);
+        recorder.onstop = async () => {
+            const blob = new Blob(chunks, { type: 'audio/webm' });
+            const path = `admin_voices/${Date.now()}.webm`;
+            try {
+                const snapshot = await uploadBytes(sRef(storage, path), blob);
+                const url = await getDownloadURL(snapshot.ref);
+                push(ref(db, `chats/${currentUserId}/messages`), { from: 'admin', voice: url, time: Date.now() });
+            } catch(err) { alert("Voice Send Failed!"); }
+            this.classList.remove('active');
+            stream.getTracks().forEach(track => track.stop());
+        };
+        recorder.start();
+    } catch(err) { alert("Mic Access Denied!"); }
+};
+
+document.getElementById('adminInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendAdminMsg();
+});
 </script>
-
-<style>
-body{margin:0;font-family:Poppins;background:#0b0a1a;color:#fff}
-.app{display:flex;flex-direction:column;height:100vh}
-.header{padding:14px;background:#120c22;text-align:center}
-.users-container{max-height:200px;overflow-y:auto;padding:10px;background:#1a0f3f}
-.user{display:flex;align-items:center;justify-content:space-between;padding:10px;margin-bottom:6px;background:#2a1b55;border-radius:8px;cursor:pointer}
-.username{font-weight:500}
-.unread-badge{background:red;color:#fff;font-size:11px;padding:2px 6px;border-radius:12px}
-.online{width:10px;height:10px;border-radius:50%}
-.block-btn{background:#ff2f6d;color:#fff;border:none;border-radius:6px;padding:2px 6px}
-.chat{flex:1;display:flex;flex-direction:column}
-.msgs{flex:1;padding:10px;background:#120c22;margin:10px;border-radius:12px;overflow-y:auto}
-.msg{position:relative;padding:8px 12px;border-radius:16px;margin-bottom:6px;max-width:70%;word-wrap:break-word}
-.msg.user{background:#1e90ff;margin-left:auto;border-bottom-right-radius:0}
-.msg.admin{background:#ff2f6d;margin-right:auto;border-bottom-left-radius:0}
-.msg img{max-width:200px;border-radius:12px;margin-top:5px;cursor:pointer}
-.msg-time{font-size:10px;color:#eee;position:absolute;bottom:2px;right:6px}
-.input{display:flex;align-items:center;padding:10px}
-input{flex:1;padding:10px;border-radius:20px;border:none}
-button{margin-left:8px;border:none;border-radius:50%;width:40px;height:40px;background:#ff2f6d;color:#fff}
-.mic-btn{background:#1e90ff}
-.record-ui{display:none;align-items:center;gap:6px;color:#ff4d4d;font-size:13px}
-.rec-dot{width:8px;height:8px;background:red;border-radius:50%;animation:blink 1s infinite}
-@keyframes blink{0%{opacity:1}50%{opacity:.2}100%{opacity:1}}
-</style>
-
-</head>
-
-<body>
-<div class="app">
-  <div class="header">
-    <div>Admin Chat</div>
-    <div class="users-container" id="users-list"></div>
-  </div>
-
-  <div class="chat">
-    <div class="header">Chat with: <span id="chatName">Select User</span></div>
-    <div class="msgs" id="msgs"></div>
-
-    <div class="input">
-      <input id="text" placeholder="Type message...">
-      <button onclick="sendMsg()">➤</button>
-      <button onclick="sendImage()" title="Send Image">🖼️</button>
-
-      <div class="record-ui" id="recordUI">
-        <span class="rec-dot"></span>
-        <span id="recTime">00:00</span>
-      </div>
-
-      <button id="micBtn" class="mic-btn">🎤</button>
-      <input type="file" id="imageInput" accept="image/*" style="display:none">
-    </div>
-  </div>
-</div>
 </body>
 </html>
