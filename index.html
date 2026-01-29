@@ -2,250 +2,179 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>MAHTAB ADMIN - LAST SEEN UPDATED</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <title>VIP Admin Panel</title>
     <style>
-        :root { --bg: #050509; --sidebar: #0a0a10; --primary: #00f2fe; --text: #ffffff; }
-        body { margin: 0; font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+        :root { --primary: #D4AF37; --bg: #0f0f0f; --card: #1a1a1a; --text: #fff; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
         
-        /* Sidebar */
-        .sidebar { width: 300px; background: var(--sidebar); border-right: 1px solid #222; display: flex; flex-direction: column; }
-        .sidebar-header { padding: 20px; font-weight: bold; color: var(--primary); border-bottom: 1px solid #222; letter-spacing: 1px; font-size: 18px; }
-        .user-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #111; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
-        .user-item:hover { background: #111; }
-        .user-item.active { background: #161625; border-left: 4px solid var(--primary); }
-        
-        .user-info { display: flex; flex-direction: column; flex: 1; }
-        .user-name { font-weight: 600; font-size: 14px; }
-        .user-status-text { font-size: 11px; color: #888; margin-top: 2px; }
-        .user-status-text.online-label { color: #2ecc71; font-weight: bold; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: var(--primary); text-align: center; margin-bottom: 30px; font-size: 2rem; }
 
-        .dot { width: 10px; height: 10px; border-radius: 50%; background: #444; }
-        .dot.online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+        /* Search Bar */
+        .search-box { width: 100%; padding: 15px; background: var(--card); border-radius: 10px; border: 1px solid #333; color: white; margin-bottom: 20px; font-size: 1rem; }
 
-        /* Chat Area */
-        .main-chat { flex: 1; display: flex; flex-direction: column; background: #08080e; }
-        .chat-header { padding: 15px; background: #0a0a10; border-bottom: 1px solid #222; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
-        .msgs { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        
-        /* Bubbles */
-        .msg { max-width: 70%; padding: 10px 12px; border-radius: 15px; position: relative; word-wrap: break-word; font-size: 14px; }
-        .msg.admin { align-self: flex-end; background: var(--primary); color: #000; border-bottom-right-radius: 2px; }
-        .msg.user { align-self: flex-start; background: #222; color: #fff; border-bottom-left-radius: 2px; }
-        
-        .msg img { max-width: 100%; border-radius: 10px; display: block; margin: 5px 0; cursor: pointer; }
-        .msg audio { max-width: 250px; margin-top: 5px; height: 32px; border-radius: 20px; outline: none; }
-        .msg.admin audio { filter: invert(1) contrast(2); }
+        /* Stats Grid */
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: var(--card); padding: 20px; border-radius: 10px; text-align: center; border-left: 4px solid var(--primary); }
+        .stat-num { font-size: 2rem; font-weight: bold; color: var(--primary); }
+        .stat-label { font-size: 0.9rem; color: #888; }
 
-        .msg-time { font-size: 10px; opacity: 0.7; display: block; margin-top: 5px; text-align: right; }
+        /* User List */
+        .user-list { display: flex; flex-direction: column; gap: 15px; }
+        .user-card { background: var(--card); padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+        .user-card:hover { transform: translateX(5px); background: #222; }
+
+        .u-info h3 { margin-bottom: 5px; font-size: 1.1rem; }
+        .u-meta { font-size: 0.85rem; color: #888; display: flex; gap: 10px; align-items: center; }
+        .badge { padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .badge.online { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
+        .badge.offline { background: rgba(136, 136, 136, 0.2); color: #888; }
         
-        /* Input Area */
-        .input-area { padding: 15px; background: #0a0a10; display: flex; gap: 10px; border-top: 1px solid #222; align-items: center; }
-        input[type="text"] { flex: 1; background: #1c1c24; border: none; padding: 12px; border-radius: 10px; color: #fff; outline: none; }
-        
-        .btn { border: none; border-radius: 8px; padding: 10px 15px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
-        .btn-icon { background: #1c1c24; color: #fff; font-size: 18px; }
-        .btn-send { background: var(--primary); color: #000; }
-        .btn-mic { background: #1c1c24; color: var(--primary); font-size: 20px; }
-        .btn-mic.active { background: #ff4757; color: white; animation: pulse 1s infinite; }
-        
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        .unread-badge { background: #f44336; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .time-badge { font-size: 0.8rem; background: #333; padding: 4px 8px; border-radius: 5px; }
+
+        .empty-state { text-align: center; color: #666; margin-top: 50px; }
     </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <div class="sidebar-header">MAHTAB ADMIN</div>
-    <div id="userList" style="overflow-y:auto; flex:1;"></div>
-</div>
-
-<div class="main-chat">
-    <div class="chat-header" id="chatHeader">Select a user to start</div>
-    <div class="msgs" id="msgs"></div>
-    
-    <div class="input-area" id="inputArea" style="display:none;">
-        <button class="btn btn-icon" onclick="document.getElementById('adminFile').click()">📷</button>
-        <input type="file" id="adminFile" accept="image/*" style="display:none">
-        <input type="text" id="adminInput" placeholder="Write a reply...">
-        <button class="btn btn-mic" id="adminMic">🎤</button>
-        <button class="btn btn-send" onclick="sendAdminMsg()">SEND</button>
-    </div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, onValue, push, update, onChildAdded, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyAqfguS1ucAtklcl06eB1JIWQr46XMpe7g",
-    authDomain: "safe-chat-c0b9c.firebaseapp.com",
-    databaseURL: "https://safe-chat-c0b9c-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "safe-chat-c0b9c",
-    storageBucket: "safe-chat-c0b9c.appspot.com",
-    messagingSenderId: "119640275300",
-    appId: "1:119640275300:web:20ae984f4af1ffe6a62271"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const storage = getStorage(app);
-
-let currentUserId = null;
-let msgListener = null;
-
-// --- 12 HOUR TIME FORMATTER ---
-function formatTime(timestamp) {
-    if(!timestamp) return "";
-    const date = new Date(timestamp);
-    let hours = date.getHours();
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12 || 12;
-    return `${hours}:${minutes} ${ampm}`;
-}
-
-// --- ADMIN OWN STATUS LOGIC ---
-const adminStatusRef = ref(db, 'status/admin');
-update(adminStatusRef, { state: 'online', last_seen: serverTimestamp() });
-onDisconnect(adminStatusRef).set({ state: 'offline', last_seen: serverTimestamp() });
-
-// --- LIST USERS WITH LAST SEEN ---
-onValue(ref(db, 'status'), (statusSnap) => {
-    const statuses = statusSnap.val() || {};
-    
-    onValue(ref(db, 'chats'), (chatSnap) => {
-        const list = document.getElementById('userList');
-        list.innerHTML = "";
+    <div class="container">
+        <h1>Admin Dashboard 👑</h1>
         
-        chatSnap.forEach(user => {
-            const id = user.key;
-            if(id === 'admin') return;
+        <input type="text" id="search" class="search-box" placeholder="🔍 Search User Name..." onkeyup="filterUsers()">
 
-            const userStat = statuses[id] || {};
-            const isOnline = userStat.state === 'online';
-            const lastTime = userStat.last_seen ? formatTime(userStat.last_seen) : 'Never';
-            
-            const div = document.createElement('div');
-            div.className = `user-item ${currentUserId === id ? 'active' : ''}`;
-            
-            const statusText = isOnline ? 'Online' : `last seen ${lastTime}`;
-            const statusClass = isOnline ? 'online-label' : '';
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-num" id="total-users">0</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="online-users" style="color: #4caf50;">0</div>
+                <div class="stat-label">Online Now</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="unread-msgs" style="color: #f44336;">0</div>
+                <div class="stat-label">Total Unread</div>
+            </div>
+        </div>
 
-            div.innerHTML = `
-                <div class="dot ${isOnline ? 'online' : ''}"></div>
-                <div class="user-info">
-                    <span class="user-name">${id}</span>
-                    <span class="user-status-text ${statusClass}">${statusText}</span>
-                </div>
-            `;
-            div.onclick = () => openChat(id);
-            list.appendChild(div);
-        });
-    });
-}, { onlyOnce: false });
+        <div id="user-list" class="user-list">
+            <!-- Users will load here -->
+        </div>
+    </div>
 
-// --- OPEN CHAT ---
-function openChat(id) {
-    if(currentUserId === id) return;
-    currentUserId = id;
-    document.getElementById('chatHeader').innerHTML = `<span>Chatting with: <span style="color:var(--primary)">${id}</span></span>`;
-    document.getElementById('inputArea').style.display = "flex";
-    const msgBox = document.getElementById('msgs');
-    msgBox.innerHTML = "";
-    
-    onValue(ref(db, `chats/${id}/messages`), (snap) => {
-        msgBox.innerHTML = "";
-        snap.forEach(child => {
-            renderMessage(child.val(), child.key);
-        });
-    });
-}
+    <!-- FIREBASE & LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-function renderMessage(m, key) {
-    const box = document.getElementById('msgs');
-    const d = document.createElement('div');
-    d.className = `msg ${m.from}`;
-
-    if(m.text) d.innerHTML += `<div>${m.text}</div>`;
-    if(m.image) d.innerHTML += `<img src="${m.image}" onclick="window.open('${m.image}')">`;
-    if(m.voice) {
-        const audio = document.createElement('audio');
-        audio.controls = true;
-        audio.src = m.voice;
-        audio.preload = "metadata"; 
-        d.appendChild(audio);
-    }
-
-    const time = formatTime(m.time);
-    d.innerHTML += `<span class="msg-time">${time}</span>`;
-
-    box.appendChild(d);
-    box.scrollTop = box.scrollHeight;
-
-    if(m.from === 'user' && m.status !== 'seen') {
-        update(ref(db, `chats/${currentUserId}/messages/${key}`), {status: 'seen'});
-    }
-}
-
-// --- SEND TEXT ---
-window.sendAdminMsg = () => {
-    const input = document.getElementById('adminInput');
-    if(!input.value.trim() || !currentUserId) return;
-    
-    push(ref(db, `chats/${currentUserId}/messages`), {
-        from: 'admin', text: input.value, time: Date.now(), status: 'sent'
-    });
-    input.value = "";
-};
-
-// --- SEND IMAGE ---
-document.getElementById('adminFile').onchange = async (e) => {
-    const file = e.target.files[0];
-    if(!file || !currentUserId) return;
-    try {
-        const path = `admin_media/${Date.now()}_${file.name}`;
-        const snapshot = await uploadBytes(sRef(storage, path), file);
-        const url = await getDownloadURL(snapshot.ref);
-        push(ref(db, `chats/${currentUserId}/messages`), { from: 'admin', image: url, time: Date.now() });
-    } catch(err) { alert("Image Error: " + err.message); }
-};
-
-// --- SEND VOICE ---
-let recorder, chunks = [];
-const micBtn = document.getElementById('adminMic');
-micBtn.onclick = async function() {
-    if (this.classList.contains('active')) {
-        if(recorder) recorder.stop();
-        return;
-    }
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        recorder = new MediaRecorder(stream);
-        chunks = [];
-        this.classList.add('active');
-        recorder.ondataavailable = (e) => chunks.push(e.data);
-        recorder.onstop = async () => {
-            const blob = new Blob(chunks, { type: 'audio/webm' });
-            const path = `admin_voices/${Date.now()}.webm`;
-            try {
-                const snapshot = await uploadBytes(sRef(storage, path), blob);
-                const url = await getDownloadURL(snapshot.ref);
-                push(ref(db, `chats/${currentUserId}/messages`), { from: 'admin', voice: url, time: Date.now() });
-            } catch(err) { alert("Voice Send Failed!"); }
-            this.classList.remove('active');
-            stream.getTracks().forEach(track => track.stop());
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqfguS1ucAtklcl06eB1JIWQr46XMpe7g",
+            authDomain: "safe-chat-c0b9c.firebaseapp.com",
+            databaseURL: "https://safe-chat-c0b9c-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "safe-chat-c0b9c",
+            storageBucket: "safe-chat-c0b9c.firebasedatabase.app",
+            messagingSenderId: "119640275300",
+            appId: "1:119640275300:web:20ae984f4af1ffe6a62271"
         };
-        recorder.start();
-    } catch(err) { alert("Mic Access Denied!"); }
-};
 
-document.getElementById('adminInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendAdminMsg();
-});
-</script>
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let allUsers = [];
+        let allMessages = [];
+
+        // Keep Admin Alive
+        setInterval(() => {
+            update(ref(db, 'admin_status'), { lastSeen: Date.now() });
+        }, 2000);
+
+        // --- LISTEN TO DATA ---
+        function loadData() {
+            // Users Listener
+            onValue(ref(db, 'users'), (snap) => {
+                const data = snap.val();
+                allUsers = data ? Object.values(data) : [];
+                renderUsers();
+                updateStats();
+            });
+
+            // Messages Listener (for unread counts)
+            onValue(ref(db, 'messages'), (snap) => {
+                const data = snap.val();
+                allMessages = data ? Object.values(data) : [];
+                renderUsers(); // Re-render to update unread counts
+                updateStats();
+            });
+        }
+
+        // --- RENDER LOGIC ---
+        function renderUsers() {
+            const list = document.getElementById('user-list');
+            const searchVal = document.getElementById('search').value.toLowerCase();
+            list.innerHTML = '';
+
+            if (allUsers.length === 0) {
+                list.innerHTML = '<div class="empty-state">No users yet.</div>';
+                return;
+            }
+
+            allUsers.forEach(user => {
+                // Search Filter
+                if (!user.name.toLowerCase().includes(searchVal)) return;
+
+                // Calculate Unread (Messages from user to admin)
+                const unreadCount = allMessages.filter(m => 
+                    m.senderId === user.id && 
+                    m.receiverId === 'admin'
+                ).length;
+
+                // Online Status (Last seen < 10 sec)
+                const isOnline = (Date.now() - user.lastSeen) < 10000;
+                
+                const card = document.createElement('div');
+                card.className = 'user-card';
+                card.innerHTML = `
+                    <div class="u-info">
+                        <h3>${escapeHtml(user.name)} ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}</h3>
+                        <div class="u-meta">
+                            <span class="badge ${isOnline ? 'online' : 'offline'}">
+                                ${isOnline ? '● Online' : '○ Offline'}
+                            </span>
+                            <span>ID: ${user.id.slice(-4)}</span>
+                        </div>
+                    </div>
+                    <div class="u-meta">
+                        <span class="time-badge">Joined: ${new Date(user.joinTime).toLocaleDateString()}</span>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function updateStats() {
+            const total = allUsers.length;
+            const online = allUsers.filter(u => (Date.now() - u.lastSeen) < 10000).length;
+            const unread = allMessages.filter(m => m.receiverId === 'admin').length;
+
+            document.getElementById('total-users').innerText = total;
+            document.getElementById('online-users').innerText = online;
+            document.getElementById('unread-msgs').innerText = unread;
+        }
+
+        window.filterUsers = () => {
+            renderUsers();
+        };
+
+        function escapeHtml(text) {
+            if(!text) return '';
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Initialize
+        loadData();
+    </script>
 </body>
 </html>
