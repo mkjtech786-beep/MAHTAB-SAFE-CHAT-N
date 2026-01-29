@@ -2,73 +2,165 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIP Admin Panel</title>
     <style>
-        :root { --primary: #D4AF37; --bg: #0f0f0f; --card: #1a1a1a; --text: #fff; }
+        :root { --primary: #D4AF37; --bg: #0f0f0f; --card: #1e1e1e; --text: #fff; --accent: #6C63FF; --danger: #ff4757; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
+        body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+        /* --- DASHBOARD LIST VIEW --- */
+        #dashboard-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         
-        .container { max-width: 800px; margin: 0 auto; }
-        h1 { color: var(--primary); text-align: center; margin-bottom: 30px; font-size: 2rem; }
+        header { padding: 15px; background: var(--card); border-bottom: 1px solid #333; display: flex; align-items: center; justify-content: space-between; }
+        .search-box { width: 100%; padding: 15px; background: var(--bg); }
+        input { width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 10px; outline: none; }
 
-        /* Search Bar */
-        .search-box { width: 100%; padding: 15px; background: var(--card); border-radius: 10px; border: 1px solid #333; color: white; margin-bottom: 20px; font-size: 1rem; }
+        .stats-row { display: flex; gap: 10px; padding: 0 15px 10px; overflow-x: auto; }
+        .stat-card { background: var(--card); padding: 10px; border-radius: 10px; min-width: 100px; text-align: center; border: 1px solid #333; }
+        .stat-num { font-size: 1.2rem; color: var(--primary); font-weight: bold; }
+        .stat-label { font-size: 0.75rem; color: #888; }
 
-        /* Stats Grid */
-        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .stat-card { background: var(--card); padding: 20px; border-radius: 10px; text-align: center; border-left: 4px solid var(--primary); }
-        .stat-num { font-size: 2rem; font-weight: bold; color: var(--primary); }
-        .stat-label { font-size: 0.9rem; color: #888; }
-
-        /* User List */
-        .user-list { display: flex; flex-direction: column; gap: 15px; }
-        .user-card { background: var(--card); padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
-        .user-card:hover { transform: translateX(5px); background: #222; }
-
-        .u-info h3 { margin-bottom: 5px; font-size: 1.1rem; }
-        .u-meta { font-size: 0.85rem; color: #888; display: flex; gap: 10px; align-items: center; }
-        .badge { padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
-        .badge.online { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
-        .badge.offline { background: rgba(136, 136, 136, 0.2); color: #888; }
+        .user-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .user-card { background: var(--card); padding: 15px; margin-bottom: 10px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary); cursor: pointer; transition: 0.2s; }
+        .user-card:hover { background: #252525; transform: translateX(5px); }
         
-        .unread-badge { background: #f44336; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
-        .time-badge { font-size: 0.8rem; background: #333; padding: 4px 8px; border-radius: 5px; }
+        .u-info { flex: 1; min-width: 0; padding-right: 5px; }
+        .u-info h3 { font-size: 1rem; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .u-last-msg { font-size: 0.8rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        .u-meta { font-size: 0.75rem; color: #aaa; display: flex; align-items: center; gap: 5px; }
+        
+        /* DELETE BUTTON */
+        .delete-btn { 
+            background: none; border: none; color: #ff4757; 
+            font-size: 1.2rem; cursor: pointer; padding: 5px; 
+            transition: transform 0.2s; flex-shrink: 0;
+        }
+        .delete-btn:hover { transform: scale(1.2); color: #ff6b81; }
 
-        .empty-state { text-align: center; color: #666; margin-top: 50px; }
+        /* UNREAD BADGE STYLE */
+        .unread-count { 
+            background: var(--danger); 
+            color: white; 
+            padding: 2px 8px; 
+            border-radius: 12px; 
+            font-size: 0.75rem; 
+            font-weight: bold; 
+            box-shadow: 0 2px 5px rgba(255, 71, 87, 0.3);
+            animation: popIn 0.3s ease;
+        }
+
+        /* --- CHAT VIEW --- */
+        #chat-view { display: none; flex: 1; flex-direction: column; height: 100%; position: fixed; top: 0; left: 0; width: 100%; background: var(--bg); z-index: 100; }
+        
+        .chat-header { padding: 15px; background: var(--card); border-bottom: 1px solid #333; display: flex; align-items: center; gap: 10px; }
+        .back-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+        
+        #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 75%; padding: 10px 15px; border-radius: 15px; font-size: 0.9rem; }
+        .msg-admin { align-self: flex-end; background: var(--primary); color: #000; border-bottom-right-radius: 2px; }
+        .msg-user { align-self: flex-start; background: #333; color: #fff; border-bottom-left-radius: 2px; }
+        .msg-img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
+
+        .chat-input-area { padding: 10px; background: var(--card); border-top: 1px solid #333; display: flex; gap: 10px; align-items: center; }
+        .chat-input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #444; background: #2a2a2a; color: white; outline: none; }
+        .icon-btn { background: none; border: none; color: #aaa; font-size: 1.2rem; cursor: pointer; transition: 0.2s; }
+        .icon-btn:hover { color: white; }
+        .send-btn { background: var(--primary); border: none; width: 40px; height: 40px; border-radius: 50%; color: #000; cursor: pointer; font-weight: bold; }
+
+        /* --- VOICE RECORDER UI --- */
+        #recording-overlay {
+            position: absolute; bottom: 80px; left: 20px; right: 20px;
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 20px;
+            display: none; 
+            align-items: center; justify-content: space-between;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid var(--danger);
+            z-index: 200;
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .rec-info { display: flex; align-items: center; gap: 10px; color: white; }
+        .rec-dot { width: 12px; height: 12px; background: var(--danger); border-radius: 50%; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        .rec-timer { font-family: monospace; font-size: 1.1rem; font-weight: bold; letter-spacing: 1px; }
+
+        .waveform { display: flex; gap: 3px; align-items: center; height: 20px; margin-left: 10px; }
+        .bar { width: 3px; background: var(--danger); border-radius: 3px; animation: wave 1s infinite ease-in-out; }
+        .bar:nth-child(1) { height: 10px; animation-delay: 0.1s; }
+        .bar:nth-child(2) { height: 18px; animation-delay: 0.2s; }
+        .bar:nth-child(3) { height: 12px; animation-delay: 0.3s; }
+        .bar:nth-child(4) { height: 20px; animation-delay: 0.1s; }
+        .bar:nth-child(5) { height: 8px; animation-delay: 0.4s; }
+        @keyframes wave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.5); } }
+
+        .stop-rec-btn { 
+            width: 40px; height: 40px; background: var(--danger); 
+            border-radius: 50%; display: flex; align-items: center; 
+            justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 71, 87, 0.4);
+        }
+        .stop-icon { width: 14px; height: 14px; background: white; border-radius: 2px; }
+
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Admin Dashboard 👑</h1>
-        
-        <input type="text" id="search" class="search-box" placeholder="🔍 Search User Name..." onkeyup="filterUsers()">
-
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-num" id="total-users">0</div>
-                <div class="stat-label">Total Users</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-num" id="online-users" style="color: #4caf50;">0</div>
-                <div class="stat-label">Online Now</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-num" id="unread-msgs" style="color: #f44336;">0</div>
-                <div class="stat-label">Total Unread</div>
-            </div>
+    <!-- LIST VIEW -->
+    <div id="dashboard-view">
+        <header>
+            <h3>Admin Panel 👑</h3>
+        </header>
+        <div class="stats-row">
+            <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Users</div></div>
+            <div class="stat-card"><div class="stat-num" id="stat-unread" style="color:var(--danger)">0</div><div class="stat-label">Unread</div></div>
         </div>
-
-        <div id="user-list" class="user-list">
-            <!-- Users will load here -->
+        <div class="search-box">
+            <input type="search" id="search-input" placeholder="Search User..." onkeyup="renderUserList()">
+        </div>
+        <div class="user-list" id="user-list-container">
+            <!-- Users Load Here -->
         </div>
     </div>
 
-    <!-- FIREBASE & LOGIC -->
+    <!-- CHAT VIEW -->
+    <div id="chat-view">
+        <!-- RECORDING OVERLAY -->
+        <div id="recording-overlay">
+            <div class="rec-info">
+                <div class="rec-dot"></div>
+                <div class="waveform">
+                    <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                </div>
+                <span class="rec-timer" id="overlay-timer">00:00</span>
+            </div>
+            <div class="stop-rec-btn" id="stop-rec-btn">
+                <div class="stop-icon"></div>
+            </div>
+        </div>
+
+        <div class="chat-header">
+            <button class="back-btn" onclick="closeChat()">←</button>
+            <div class="u-info">
+                <h3 id="chat-user-name">User</h3>
+                <span style="font-size:0.75rem; color:#888;" id="chat-user-status">Online</span>
+            </div>
+        </div>
+        <div id="chat-messages"></div>
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="admin-msg-input" placeholder="Type reply..." onkeypress="handleAdminEnter(event)">
+            
+            <button class="icon-btn" id="voice-btn">🎙️</button>
+            <button class="send-btn" onclick="adminSendMsg()">➤</button>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue, set, update, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAqfguS1ucAtklcl06eB1JIWQr46XMpe7g",
@@ -84,97 +176,265 @@
         const db = getDatabase(app);
 
         let allUsers = [];
-        let allMessages = [];
+        let allMessages = []; 
+        let currentChatId = null;
 
         // Keep Admin Alive
         setInterval(() => {
             update(ref(db, 'admin_status'), { lastSeen: Date.now() });
         }, 2000);
 
-        // --- LISTEN TO DATA ---
-        function loadData() {
-            // Users Listener
+        // --- DATA LOADING ---
+        function init() {
             onValue(ref(db, 'users'), (snap) => {
                 const data = snap.val();
-                allUsers = data ? Object.values(data) : [];
-                renderUsers();
+                allUsers = data ? Object.entries(data).map(([id, user]) => ({ id, ...user })) : [];
+                renderUserList();
                 updateStats();
             });
 
-            // Messages Listener (for unread counts)
             onValue(ref(db, 'messages'), (snap) => {
                 const data = snap.val();
-                allMessages = data ? Object.values(data) : [];
-                renderUsers(); // Re-render to update unread counts
+                allMessages = data ? Object.entries(data).map(([id, msg]) => ({ id, ...msg })) : [];
+                renderUserList(); 
                 updateStats();
+                if(currentChatId) renderChat(currentChatId); 
             });
+            
+            setupVoiceEvents();
         }
 
-        // --- RENDER LOGIC ---
-        function renderUsers() {
-            const list = document.getElementById('user-list');
-            const searchVal = document.getElementById('search').value.toLowerCase();
+        function setupVoiceEvents() {
+            const voiceBtn = document.getElementById('voice-btn');
+            const stopBtn = document.getElementById('stop-rec-btn');
+            
+            if(!voiceBtn) return;
+            voiceBtn.addEventListener('mousedown', startAdminRec);
+            voiceBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startAdminRec(); });
+            stopBtn.addEventListener('click', stopAdminRec);
+            window.addEventListener('mouseup', () => { if(isRecording) stopAdminRec(); });
+            window.addEventListener('touchend', () => { if(isRecording) stopAdminRec(); });
+        }
+
+        // --- RENDER LIST ---
+        function renderUserList() {
+            const list = document.getElementById('user-list-container');
+            const search = document.getElementById('search-input').value.toLowerCase();
             list.innerHTML = '';
 
-            if (allUsers.length === 0) {
-                list.innerHTML = '<div class="empty-state">No users yet.</div>';
-                return;
-            }
-
             allUsers.forEach(user => {
-                // Search Filter
-                if (!user.name.toLowerCase().includes(searchVal)) return;
+                if(!user.name.toLowerCase().includes(search)) return;
 
-                // Calculate Unread (Messages from user to admin)
+                // Get latest message preview
+                const userMsgs = allMessages.filter(m => 
+                    (m.senderId === user.id && m.receiverId === 'admin') || 
+                    (m.senderId === 'admin' && m.receiverId === user.id)
+                ).sort((a,b) => b.timestamp - a.timestamp);
+
+                const lastMsg = userMsgs[0];
+                let previewText = "No messages yet";
+                if(lastMsg) {
+                    if(lastMsg.type === 'image') previewText = "📷 Image";
+                    else if(lastMsg.type === 'voice') previewText = "🎙️ Voice Note";
+                    else previewText = lastMsg.content;
+                }
+
+                // Count Unread
                 const unreadCount = allMessages.filter(m => 
                     m.senderId === user.id && 
-                    m.receiverId === 'admin'
+                    m.receiverId === 'admin' &&
+                    !m.seenByAdmin
                 ).length;
 
-                // Online Status (Last seen < 10 sec)
+                // Online / Offline Logic WITH TIME
                 const isOnline = (Date.now() - user.lastSeen) < 10000;
                 
+                let statusHtml = '';
+                if(isOnline) {
+                    statusHtml = '<span style="color: #00b894;">● Online</span>';
+                } else {
+                    // Calculate Last Seen Time
+                    const date = new Date(user.lastSeen);
+                    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+                    statusHtml = `<span style="color: #aaa;">○ Last seen ${timeStr}</span>`;
+                }
+
                 const card = document.createElement('div');
                 card.className = 'user-card';
+                card.onclick = () => openChat(user.id);
+                
                 card.innerHTML = `
-                    <div class="u-info">
-                        <h3>${escapeHtml(user.name)} ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}</h3>
-                        <div class="u-meta">
-                            <span class="badge ${isOnline ? 'online' : 'offline'}">
-                                ${isOnline ? '● Online' : '○ Offline'}
-                            </span>
-                            <span>ID: ${user.id.slice(-4)}</span>
+                    <div style="flex:1; min-width:0; padding-right:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3 style="font-size:1rem; color:${isOnline ? 'var(--primary)' : '#fff'}">${user.name} ${unreadCount > 0 ? `<span class="unread-count">${unreadCount}</span>` : ''}</h3>
                         </div>
+                        <div class="u-last-msg" style="margin-top:5px;">${previewText}</div>
+                        <div class="u-meta" style="margin-top:5px;">${statusHtml}</div>
                     </div>
-                    <div class="u-meta">
-                        <span class="time-badge">Joined: ${new Date(user.joinTime).toLocaleDateString()}</span>
-                    </div>
+                    <!-- DELETE BUTTON -->
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteUser('${user.id}')" title="Delete User">🗑️</button>
                 `;
                 list.appendChild(card);
             });
         }
 
         function updateStats() {
-            const total = allUsers.length;
-            const online = allUsers.filter(u => (Date.now() - u.lastSeen) < 10000).length;
-            const unread = allMessages.filter(m => m.receiverId === 'admin').length;
-
-            document.getElementById('total-users').innerText = total;
-            document.getElementById('online-users').innerText = online;
-            document.getElementById('unread-msgs').innerText = unread;
+            document.getElementById('stat-total').innerText = allUsers.length;
+            document.getElementById('stat-unread').innerText = allMessages.filter(m => m.receiverId === 'admin' && !m.seenByAdmin).length;
         }
 
-        window.filterUsers = () => {
-            renderUsers();
+        // --- DELETE USER LOGIC ---
+        window.deleteUser = (userId) => {
+            if(confirm("Are you sure you want to delete this user and all messages?")) {
+                remove(ref(db, 'users/' + userId));
+                const userMsgs = allMessages.filter(m => m.senderId === userId || m.receiverId === userId);
+                userMsgs.forEach(msg => {
+                    remove(ref(db, 'messages/' + msg.id));
+                });
+                alert("User deleted successfully.");
+            }
         };
 
-        function escapeHtml(text) {
-            if(!text) return '';
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        // --- CHAT LOGIC ---
+        window.openChat = (userId) => {
+            currentChatId = userId;
+            const user = allUsers.find(u => u.id === userId);
+            
+            // MARK AS READ LOGIC
+            const unreadMsgs = allMessages.filter(m => 
+                m.senderId === userId && 
+                m.receiverId === 'admin' && 
+                !m.seenByAdmin
+            );
+            unreadMsgs.forEach(msg => {
+                update(ref(db, 'messages/' + msg.id), { seenByAdmin: true });
+            });
+
+            document.getElementById('dashboard-view').style.display = 'none';
+            document.getElementById('chat-view').style.display = 'flex';
+            document.getElementById('chat-user-name').innerText = user.name;
+            
+            // Update Chat Header Status
+            const isOnline = (Date.now() - user.lastSeen) < 10000;
+            const statusEl = document.getElementById('chat-user-status');
+            if(isOnline) {
+                statusEl.innerText = 'Online';
+                statusEl.style.color = '#00b894';
+            } else {
+                const date = new Date(user.lastSeen);
+                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+                statusEl.innerText = `Last seen ${timeStr}`;
+                statusEl.style.color = '#888';
+            }
+            
+            renderChat(userId);
+        };
+
+        window.closeChat = () => {
+            currentChatId = null;
+            document.getElementById('chat-view').style.display = 'none';
+            document.getElementById('dashboard-view').style.display = 'flex';
+        };
+
+        function renderChat(userId) {
+            const box = document.getElementById('chat-messages');
+            box.innerHTML = '';
+
+            const chatMsgs = allMessages.filter(m => 
+                (m.senderId === userId && m.receiverId === 'admin') || 
+                (m.senderId === 'admin' && m.receiverId === userId)
+            ).sort((a,b) => a.timestamp - b.timestamp);
+
+            chatMsgs.forEach(msg => {
+                const div = document.createElement('div');
+                const isAdmin = msg.senderId === 'admin';
+                div.className = `msg ${isAdmin ? 'msg-admin' : 'msg-user'}`;
+                
+                let content = msg.content;
+                if(msg.type === 'image') content = `<img src="${msg.content}" class="msg-img">`;
+                if(msg.type === 'voice') content = `<audio src="${msg.content}" controls style="height:30px; width:200px;"></audio>`;
+
+                const time = new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                div.innerHTML = `${content}<div style="font-size:0.7rem; text-align:right; opacity:0.7; margin-top:5px;">${time}</div>`;
+                
+                box.appendChild(div);
+            });
+            box.scrollTop = box.scrollHeight;
         }
 
-        // Initialize
-        loadData();
+        window.adminSendMsg = () => {
+            const input = document.getElementById('admin-msg-input');
+            const text = input.value.trim();
+            if(!text || !currentChatId) return;
+
+            push(ref(db, 'messages'), {
+                senderId: 'admin',
+                receiverId: currentChatId,
+                type: 'text',
+                content: text,
+                timestamp: Date.now(),
+                status: 'sent'
+            });
+            input.value = '';
+        };
+
+        window.handleAdminEnter = (e) => {
+            if(e.key === 'Enter') adminSendMsg();
+        };
+
+        // --- ADMIN VOICE RECORDER LOGIC ---
+        let mediaRecorder, audioChunks, recordTimerInterval, recordingSeconds, isRecording = false;
+        async function startAdminRec() {
+            if (isRecording) return;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                let mimeType = 'audio/webm';
+                if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) mimeType = 'audio/webm;codecs=opus';
+                else if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
+                
+                mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+                audioChunks = [];
+                mediaRecorder.ondataavailable = event => { if (event.data.size > 0) audioChunks.push(event.data); };
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: mimeType }); 
+                    stream.getTracks().forEach(track => track.stop());
+                    const reader = new FileReader();
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = () => {
+                        const base64Audio = reader.result;
+                        if(base64Audio.length > 10000000) adminSendVoice('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
+                        else adminSendVoice(base64Audio);
+                    };
+                };
+                mediaRecorder.start(1000);
+                isRecording = true;
+                document.getElementById('recording-overlay').style.display = 'flex';
+                recordingSeconds = 0; updateTimer();
+                recordTimerInterval = setInterval(updateTimer, 1000);
+            } catch (err) { alert("Mic Error: " + err.message); }
+        }
+        function stopAdminRec() {
+            if (!isRecording) return;
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+            isRecording = false;
+            clearInterval(recordTimerInterval);
+            document.getElementById('recording-overlay').style.display = 'none';
+        }
+        function updateTimer() {
+            const mins = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
+            const secs = (recordingSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('overlay-timer').innerText = `${mins}:${secs}`;
+            recordingSeconds++;
+        }
+        function adminSendVoice(base64) {
+            if(!currentChatId) return;
+            push(ref(db, 'messages'), {
+                senderId: 'admin', receiverId: currentChatId, type: 'voice', content: base64, timestamp: Date.now(), status: 'sent'
+            });
+        }
+
+        // Start
+        init();
     </script>
 </body>
 </html>
