@@ -13,8 +13,14 @@
         #dashboard-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         
         header { padding: 15px; background: var(--card); border-bottom: 1px solid #333; display: flex; align-items: center; justify-content: space-between; }
-        .search-box { width: 100%; padding: 15px; background: var(--bg); }
-        input { width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 10px; outline: none; }
+        .search-box { width: 100%; padding: 15px; background: var(--bg); position: relative; }
+        input { width: 100%; padding: 12px; padding-right: 40px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 10px; outline: none; }
+        .clear-search { 
+            position: absolute; right: 25px; top: 50%; transform: translateY(-50%);
+            background: #444; color: white; border: none; border-radius: 50%; 
+            width: 20px; height: 20px; display: none; align-items: center; justify-content: center; 
+            font-size: 12px; cursor: pointer;
+        }
 
         .stats-row { display: flex; gap: 10px; padding: 0 15px 10px; overflow-x: auto; }
         .stat-card { background: var(--card); padding: 10px; border-radius: 10px; min-width: 100px; text-align: center; border: 1px solid #333; }
@@ -120,6 +126,7 @@
         </div>
         <div class="search-box">
             <input type="search" id="search-input" placeholder="Search User..." onkeyup="renderUserList()">
+            <button id="clear-search-btn" class="clear-search" onclick="clearSearch()">✕</button>
         </div>
         <div class="user-list" id="user-list-container">
             <!-- Users Load Here -->
@@ -189,6 +196,10 @@
             onValue(ref(db, 'users'), (snap) => {
                 const data = snap.val();
                 allUsers = data ? Object.entries(data).map(([id, user]) => ({ id, ...user })) : [];
+                
+                // FIX: SORT NEWEST USERS TO TOP
+                allUsers.sort((a, b) => b.joinTime - a.joinTime);
+
                 renderUserList();
                 updateStats();
             });
@@ -219,10 +230,23 @@
         // --- RENDER LIST ---
         function renderUserList() {
             const list = document.getElementById('user-list-container');
-            const search = document.getElementById('search-input').value.toLowerCase();
+            const searchInput = document.getElementById('search-input');
+            const search = searchInput.value.toLowerCase();
+            const clearBtn = document.getElementById('clear-search-btn');
+
             list.innerHTML = '';
 
+            // Show Clear Button if search has text
+            if(search.trim() !== '') {
+                clearBtn.style.display = 'flex';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+
             allUsers.forEach(user => {
+                // FIX: Safety Check for Name
+                if(!user.name) return; 
+                
                 if(!user.name.toLowerCase().includes(search)) return;
 
                 // Get latest message preview
@@ -253,7 +277,6 @@
                 if(isOnline) {
                     statusHtml = '<span style="color: #00b894;">● Online</span>';
                 } else {
-                    // Calculate Last Seen Time
                     const date = new Date(user.lastSeen);
                     const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
                     statusHtml = `<span style="color: #aaa;">○ Last seen ${timeStr}</span>`;
@@ -271,12 +294,16 @@
                         <div class="u-last-msg" style="margin-top:5px;">${previewText}</div>
                         <div class="u-meta" style="margin-top:5px;">${statusHtml}</div>
                     </div>
-                    <!-- DELETE BUTTON -->
                     <button class="delete-btn" onclick="event.stopPropagation(); deleteUser('${user.id}')" title="Delete User">🗑️</button>
                 `;
                 list.appendChild(card);
             });
         }
+
+        window.clearSearch = () => {
+            document.getElementById('search-input').value = '';
+            renderUserList();
+        };
 
         function updateStats() {
             document.getElementById('stat-total').innerText = allUsers.length;
@@ -300,12 +327,12 @@
             currentChatId = userId;
             const user = allUsers.find(u => u.id === userId);
             
-            // MARK AS READ LOGIC
             const unreadMsgs = allMessages.filter(m => 
                 m.senderId === userId && 
                 m.receiverId === 'admin' && 
                 !m.seenByAdmin
             );
+            
             unreadMsgs.forEach(msg => {
                 update(ref(db, 'messages/' + msg.id), { seenByAdmin: true });
             });
@@ -314,7 +341,6 @@
             document.getElementById('chat-view').style.display = 'flex';
             document.getElementById('chat-user-name').innerText = user.name;
             
-            // Update Chat Header Status
             const isOnline = (Date.now() - user.lastSeen) < 10000;
             const statusEl = document.getElementById('chat-user-status');
             if(isOnline) {
@@ -437,4 +463,4 @@
         init();
     </script>
 </body>
-</html>
+</html>.
