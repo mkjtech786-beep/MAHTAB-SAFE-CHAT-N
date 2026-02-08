@@ -35,14 +35,6 @@
             display: flex;
         }
 
-        /* Glassmorphism Effects */
-        .glass {
-            background: rgba(36, 36, 36, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 215, 0, 0.1);
-        }
-
         /* Sidebar */
         .sidebar {
             width: 320px;
@@ -77,12 +69,6 @@
             font-size: 24px;
             color: #000;
             box-shadow: var(--gold-glow);
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
         }
 
         .logo-text h1 {
@@ -101,7 +87,6 @@
             letter-spacing: 2px;
         }
 
-        /* Search Box */
         .search-container {
             padding: 15px;
             position: relative;
@@ -132,7 +117,6 @@
             color: var(--gold-secondary);
         }
 
-        /* User List */
         .user-list {
             flex: 1;
             overflow-y: auto;
@@ -247,6 +231,16 @@
             box-shadow: var(--gold-glow);
         }
 
+        .blocked-badge {
+            background: #ff4444;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-top: 4px;
+            display: inline-block;
+        }
+
         /* Main Chat Area */
         .main-chat {
             flex: 1;
@@ -268,7 +262,6 @@
             pointer-events: none;
         }
 
-        /* Chat Header */
         .chat-header {
             padding: 15px 25px;
             background: var(--bg-secondary);
@@ -344,10 +337,26 @@
         .action-btn:hover {
             background: rgba(255, 215, 0, 0.1);
             transform: scale(1.1);
-            box-shadow: var(--gold-glow);
         }
 
-        /* Messages Area */
+        .action-btn.block-btn {
+            border-color: #ff4444;
+            color: #ff4444;
+        }
+
+        .action-btn.block-btn:hover {
+            background: rgba(255, 68, 68, 0.1);
+        }
+
+        .action-btn.unblock-btn {
+            border-color: #00c853;
+            color: #00c853;
+        }
+
+        .action-btn.unblock-btn:hover {
+            background: rgba(0, 200, 83, 0.1);
+        }
+
         .messages-container {
             flex: 1;
             overflow-y: auto;
@@ -400,11 +409,6 @@
             border-radius: 12px;
             margin-bottom: 8px;
             cursor: pointer;
-            transition: transform 0.3s;
-        }
-
-        .message-image:hover {
-            transform: scale(1.02);
         }
 
         .message-audio {
@@ -423,11 +427,11 @@
         }
 
         .message-seen {
-            color: var(--gold-primary);
+            color: #000;
             margin-left: 5px;
+            opacity: 0.6;
         }
 
-        /* Input Area */
         .input-area {
             padding: 20px 25px;
             background: var(--bg-secondary);
@@ -535,11 +539,15 @@
         }
 
         .send-btn:hover {
-            transform: scale(1.1) rotate(-10deg);
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            transform: scale(1.1);
         }
 
-        /* Scrollbar */
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -553,11 +561,6 @@
             border-radius: 4px;
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--gold-primary);
-        }
-
-        /* Empty State */
         .empty-state {
             flex: 1;
             display: flex;
@@ -573,18 +576,9 @@
             font-size: 80px;
             margin-bottom: 20px;
             opacity: 0.3;
-            background: var(--gold-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .empty-text h2 {
-            font-size: 24px;
-            margin-bottom: 10px;
             color: var(--gold-primary);
         }
 
-        /* Typing Indicator */
         .typing-indicator {
             display: none;
             padding: 15px 25px;
@@ -599,29 +593,7 @@
             display: flex;
         }
 
-        .typing-dots {
-            display: flex;
-            gap: 4px;
-        }
-
-        .typing-dots span {
-            width: 8px;
-            height: 8px;
-            background: var(--gold-primary);
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-
-        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
-
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
-
-        /* Upload Progress */
-        .upload-progress {
+        .upload-toast {
             position: fixed;
             bottom: 100px;
             right: 30px;
@@ -634,28 +606,26 @@
             gap: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             z-index: 100;
+            min-width: 250px;
         }
 
-        .upload-progress.active {
+        .upload-toast.active {
             display: flex;
         }
 
-        .progress-bar {
-            width: 200px;
-            height: 6px;
-            background: rgba(255, 215, 0, 0.2);
-            border-radius: 3px;
-            overflow: hidden;
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-top-color: var(--gold-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
 
-        .progress-fill {
-            height: 100%;
-            background: var(--gold-gradient);
-            width: 0%;
-            transition: width 0.3s;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .sidebar {
                 width: 280px;
@@ -665,7 +635,6 @@
 </head>
 <body>
 
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
             <div class="logo-section">
@@ -681,15 +650,12 @@
 
         <div class="search-container">
             <i class="fas fa-search search-icon"></i>
-            <input type="text" class="search-box" placeholder="Search conversations..." id="searchBox">
+            <input type="text" class="search-box" placeholder="Search users..." id="searchBox">
         </div>
 
-        <div class="user-list" id="userList">
-            <!-- Users will be loaded here -->
-        </div>
+        <div class="user-list" id="userList"></div>
     </div>
 
-    <!-- Main Chat -->
     <div class="main-chat">
         <div class="chat-bg"></div>
         
@@ -705,19 +671,14 @@
                 <button class="action-btn" onclick="clearChat()" title="Clear Chat">
                     <i class="fas fa-trash"></i>
                 </button>
-                <button class="action-btn" onclick="blockUser()" title="Block User">
+                <button class="action-btn block-btn" id="blockBtn" onclick="toggleBlock()" title="Block/Unblock">
                     <i class="fas fa-ban"></i>
                 </button>
             </div>
         </div>
 
         <div class="typing-indicator" id="typingIndicator">
-            <div class="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-            User is typing...
+            <i class="fas fa-ellipsis-h"></i> User is typing...
         </div>
 
         <div class="messages-container" id="messagesContainer">
@@ -726,15 +687,15 @@
                     <i class="fas fa-comments"></i>
                 </div>
                 <div class="empty-text">
-                    <h2>Welcome to Premium Admin</h2>
-                    <p>Select a user from the sidebar to start chatting</p>
+                    <h2>Welcome Admin</h2>
+                    <p>Select a user to start chatting</p>
                 </div>
             </div>
         </div>
 
         <div class="input-area" id="inputArea" style="display: none;">
             <input type="file" id="fileInput" accept="image/*" style="display: none;">
-            <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Send Image">
+            <button class="attach-btn" onclick="selectImage()" title="Send Image">
                 <i class="fas fa-image"></i>
             </button>
             
@@ -745,27 +706,24 @@
                 </button>
             </div>
             
-            <button class="send-btn" onclick="sendMessage()" title="Send Message">
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
     </div>
 
-    <!-- Upload Progress -->
-    <div class="upload-progress" id="uploadProgress">
-        <i class="fas fa-upload" style="color: var(--gold-primary);"></i>
+    <div class="upload-toast" id="uploadToast">
+        <div class="spinner"></div>
         <div>
-            <div style="font-size: 13px; margin-bottom: 5px;">Uploading...</div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
+            <div style="font-size: 14px; font-weight: 500;">Uploading...</div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Please wait</div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, onValue, push, update, onChildAdded, serverTimestamp, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-        import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+        import { getDatabase, ref, onValue, push, update, serverTimestamp, onDisconnect, remove, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAqfguS1ucAtklcl06eB1JIWQr46XMpe7g",
@@ -782,10 +740,16 @@
         const storage = getStorage(app);
 
         let currentUserId = null;
+        let currentUserBlocked = false;
         let mediaRecorder = null;
         let audioChunks = [];
+        let userListData = [];
 
-        // Time Formatter
+        // Initialize Admin Status
+        const adminStatusRef = ref(db, 'status/admin');
+        update(adminStatusRef, { state: 'online', last_seen: serverTimestamp() });
+        onDisconnect(adminStatusRef).set({ state: 'offline', last_seen: serverTimestamp() });
+
         function formatTime(timestamp) {
             if (!timestamp) return "";
             const date = new Date(timestamp);
@@ -796,74 +760,111 @@
             return `${hours}:${minutes} ${ampm}`;
         }
 
-        // Admin Status
-        const adminStatusRef = ref(db, 'status/admin');
-        update(adminStatusRef, { state: 'online', last_seen: serverTimestamp() });
-        onDisconnect(adminStatusRef).set({ state: 'offline', last_seen: serverTimestamp() });
-
-        // Load Users
-        onValue(ref(db, 'status'), (statusSnap) => {
-            const statuses = statusSnap.val() || {};
-            
-            onValue(ref(db, 'chats'), (chatSnap) => {
-                const list = document.getElementById('userList');
-                list.innerHTML = '';
+        // Load Users List
+        function loadUsers() {
+            onValue(ref(db, 'status'), (statusSnap) => {
+                const statuses = statusSnap.val() || {};
                 
-                chatSnap.forEach((user) => {
-                    const id = user.key;
-                    if (id === 'admin') return;
-
-                    const userStat = statuses[id] || {};
-                    const isOnline = userStat.state === 'online';
-                    const lastTime = userStat.last_seen ? formatTime(userStat.last_seen) : 'Never';
+                onValue(ref(db, 'chats'), (chatSnap) => {
+                    const list = document.getElementById('userList');
+                    list.innerHTML = '';
+                    userListData = [];
                     
-                    let unreadCount = 0;
-                    const messages = user.child('messages').val() || {};
-                    Object.values(messages).forEach(msg => {
-                        if (msg.from === 'user' && msg.status !== 'seen') unreadCount++;
-                    });
+                    chatSnap.forEach((user) => {
+                        const id = user.key;
+                        if (id === 'admin') return;
 
-                    const div = document.createElement('div');
-                    div.className = `user-item ${currentUserId === id ? 'active' : ''}`;
-                    div.onclick = () => openChat(id);
-                    
-                    div.innerHTML = `
-                        <div class="user-avatar">
-                            ${id.charAt(0).toUpperCase()}
-                            ${isOnline ? '<div class="online-indicator"></div>' : ''}
-                        </div>
-                        <div class="user-info">
-                            <div class="user-name">${id}</div>
-                            <div class="user-status ${isOnline ? 'online' : ''}">
-                                ${isOnline ? 'Online' : `Last seen ${lastTime}`}
+                        const userStat = statuses[id] || {};
+                        const isOnline = userStat.state === 'online';
+                        const lastTime = userStat.last_seen ? formatTime(userStat.last_seen) : 'Never';
+                        const isBlocked = user.child('blocked').val() === true;
+                        
+                        let unreadCount = 0;
+                        const messages = user.child('messages').val() || {};
+                        Object.values(messages).forEach(msg => {
+                            if (msg.from === 'user' && msg.status !== 'seen') unreadCount++;
+                        });
+
+                        const userData = { id, isOnline, lastTime, unreadCount, isBlocked };
+                        userListData.push(userData);
+
+                        const div = document.createElement('div');
+                        div.className = `user-item ${currentUserId === id ? 'active' : ''}`;
+                        div.dataset.userid = id;
+                        
+                        div.innerHTML = `
+                            <div class="user-avatar">
+                                ${id.charAt(0).toUpperCase()}
+                                ${isOnline ? '<div class="online-indicator"></div>' : ''}
                             </div>
-                        </div>
-                        <div class="user-meta">
-                            <div class="last-time">${lastTime}</div>
-                            ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
-                        </div>
-                    `;
-                    list.appendChild(div);
+                            <div class="user-info">
+                                <div class="user-name">${id}</div>
+                                <div class="user-status ${isOnline ? 'online' : ''}">
+                                    ${isOnline ? 'Online' : `Last seen ${lastTime}`}
+                                </div>
+                                ${isBlocked ? '<span class="blocked-badge">BLOCKED</span>' : ''}
+                            </div>
+                            <div class="user-meta">
+                                <div class="last-time">${lastTime}</div>
+                                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                            </div>
+                        `;
+                        
+                        // FIXED: Proper click handler
+                        div.addEventListener('click', function() {
+                            openChat(id);
+                        });
+                        
+                        list.appendChild(div);
+                    });
                 });
             });
-        });
+        }
 
-        // Open Chat
+        // Open Chat - FIXED
         window.openChat = function(userId) {
+            console.log('Opening chat with:', userId);
             currentUserId = userId;
+            
+            // Update UI
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('chatHeader').style.display = 'flex';
             document.getElementById('inputArea').style.display = 'flex';
             document.getElementById('headerName').textContent = userId;
             document.getElementById('headerAvatar').textContent = userId.charAt(0).toUpperCase();
             
-            document.querySelectorAll('.user-item').forEach(item => item.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            // Update active state in sidebar
+            document.querySelectorAll('.user-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.userid === userId) {
+                    item.classList.add('active');
+                }
+            });
+
+            // Check blocked status
+            get(ref(db, `chats/${userId}/blocked`)).then((snap) => {
+                currentUserBlocked = snap.exists() && snap.val() === true;
+                updateBlockButton();
+            });
 
             loadMessages(userId);
         }
 
-        // Load Messages
+        function updateBlockButton() {
+            const btn = document.getElementById('blockBtn');
+            if (currentUserBlocked) {
+                btn.classList.remove('block-btn');
+                btn.classList.add('unblock-btn');
+                btn.innerHTML = '<i class="fas fa-unlock"></i>';
+                btn.title = 'Unblock User';
+            } else {
+                btn.classList.remove('unblock-btn');
+                btn.classList.add('block-btn');
+                btn.innerHTML = '<i class="fas fa-ban"></i>';
+                btn.title = 'Block User';
+            }
+        }
+
         function loadMessages(userId) {
             const container = document.getElementById('messagesContainer');
             
@@ -878,7 +879,6 @@
                 scrollToBottom();
             });
 
-            // Listen for typing
             onValue(ref(db, `chats/${userId}/typing_user`), (snap) => {
                 const indicator = document.getElementById('typingIndicator');
                 if (snap.exists() && snap.val() === true) {
@@ -909,7 +909,7 @@
             }
             
             if (msg.text) {
-                content += `<div>${msg.text}</div>`;
+                content += `<div>${escapeHtml(msg.text)}</div>`;
             }
             
             const time = formatTime(msg.time);
@@ -927,12 +927,18 @@
             }
         }
 
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         function scrollToBottom() {
             const container = document.getElementById('messagesContainer');
             container.scrollTop = container.scrollHeight;
         }
 
-        // Send Text Message
+        // Send Text
         window.sendMessage = function() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
@@ -949,67 +955,58 @@
             input.value = '';
         }
 
-        // Upload Image with Progress
-        document.getElementById('fileInput').onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file || !currentUserId) {
+        // Select Image
+        window.selectImage = function() {
+            if (!currentUserId) {
                 alert('Please select a user first!');
                 return;
             }
+            document.getElementById('fileInput').click();
+        }
+
+        // Upload Image - FIXED with better error handling
+        document.getElementById('fileInput').onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file || !currentUserId) return;
             
-            // Show progress
-            const progressDiv = document.getElementById('uploadProgress');
-            const progressFill = document.getElementById('progressFill');
-            progressDiv.classList.add('active');
+            const toast = document.getElementById('uploadToast');
+            toast.classList.add('active');
             
             try {
-                const fileName = `admin_images/${Date.now()}_${file.name}`;
-                const fileRef = storageRef(storage, fileName);
+                console.log('Uploading image:', file.name);
                 
-                // Use uploadBytesResumable for progress tracking
-                const uploadTask = uploadBytesResumable(fileRef, file);
+                const fileName = `admin_images/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+                const fileRef = sRef(storage, fileName);
                 
-                uploadTask.on('state_changed', 
-                    (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        progressFill.style.width = progress + '%';
-                    },
-                    (error) => {
-                        console.error('Upload error:', error);
-                        alert('Upload failed: ' + error.message);
-                        progressDiv.classList.remove('active');
-                    },
-                    async () => {
-                        // Upload complete
-                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                        
-                        await push(ref(db, `chats/${currentUserId}/messages`), {
-                            from: 'admin',
-                            image: downloadURL,
-                            time: Date.now(),
-                            status: 'sent'
-                        });
-                        
-                        progressDiv.classList.remove('active');
-                        progressFill.style.width = '0%';
-                    }
-                );
+                const snapshot = await uploadBytes(fileRef, file);
+                console.log('Upload successful:', snapshot);
+                
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                console.log('Download URL:', downloadURL);
+                
+                await push(ref(db, `chats/${currentUserId}/messages`), {
+                    from: 'admin',
+                    image: downloadURL,
+                    time: Date.now(),
+                    status: 'sent'
+                });
+                
+                toast.classList.remove('active');
+                e.target.value = ''; // Reset input
                 
             } catch (err) {
-                console.error('Error:', err);
-                alert('Error: ' + err.message);
-                progressDiv.classList.remove('active');
+                console.error('Upload error:', err);
+                alert('Upload failed: ' + err.message);
+                toast.classList.remove('active');
             }
         }
 
-        // Voice Recording
+        // Voice Recording - FIXED
         window.toggleRecording = async function() {
             const btn = document.getElementById('micBtn');
             
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 mediaRecorder.stop();
-                btn.classList.remove('recording');
-                btn.innerHTML = '<i class="fas fa-microphone"></i>';
                 return;
             }
             
@@ -1031,48 +1028,30 @@
                     btn.classList.remove('recording');
                     btn.innerHTML = '<i class="fas fa-microphone"></i>';
                     
-                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                    
-                    // Show progress
-                    const progressDiv = document.getElementById('uploadProgress');
-                    const progressFill = document.getElementById('progressFill');
-                    progressDiv.classList.add('active');
+                    const toast = document.getElementById('uploadToast');
+                    toast.classList.add('active');
                     
                     try {
+                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
                         const fileName = `admin_voices/${Date.now()}.webm`;
-                        const voiceRef = storageRef(storage, fileName);
+                        const voiceRef = sRef(storage, fileName);
                         
-                        const uploadTask = uploadBytesResumable(voiceRef, blob);
+                        const snapshot = await uploadBytes(voiceRef, blob);
+                        const downloadURL = await getDownloadURL(snapshot.ref);
                         
-                        uploadTask.on('state_changed',
-                            (snapshot) => {
-                                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                                progressFill.style.width = progress + '%';
-                            },
-                            (error) => {
-                                console.error('Voice upload error:', error);
-                                alert('Voice upload failed: ' + error.message);
-                                progressDiv.classList.remove('active');
-                            },
-                            async () => {
-                                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                                
-                                await push(ref(db, `chats/${currentUserId}/messages`), {
-                                    from: 'admin',
-                                    voice: downloadURL,
-                                    time: Date.now(),
-                                    status: 'sent'
-                                });
-                                
-                                progressDiv.classList.remove('active');
-                                progressFill.style.width = '0%';
-                            }
-                        );
+                        await push(ref(db, `chats/${currentUserId}/messages`), {
+                            from: 'admin',
+                            voice: downloadURL,
+                            time: Date.now(),
+                            status: 'sent'
+                        });
+                        
+                        toast.classList.remove('active');
                         
                     } catch (err) {
-                        console.error('Error:', err);
-                        alert('Error: ' + err.message);
-                        progressDiv.classList.remove('active');
+                        console.error('Voice upload error:', err);
+                        alert('Voice upload failed: ' + err.message);
+                        toast.classList.remove('active');
                     }
                     
                     stream.getTracks().forEach(track => track.stop());
@@ -1084,7 +1063,7 @@
                 
             } catch (err) {
                 console.error('Mic error:', err);
-                alert('Microphone access denied! Please allow microphone permission.');
+                alert('Microphone access denied! Please allow microphone permission in browser.');
             }
         }
 
@@ -1094,17 +1073,35 @@
             remove(ref(db, `chats/${currentUserId}/messages`));
         }
 
-        // Block User
-        window.blockUser = function() {
+        // Toggle Block/Unblock
+        window.toggleBlock = async function() {
             if (!currentUserId) return;
-            const blocked = confirm('Block this user?');
-            update(ref(db, `chats/${currentUserId}`), { blocked: blocked });
+            
+            const newBlockStatus = !currentUserBlocked;
+            await update(ref(db, `chats/${currentUserId}`), { blocked: newBlockStatus });
+            currentUserBlocked = newBlockStatus;
+            updateBlockButton();
+            
+            // Refresh user list to show blocked badge
+            loadUsers();
         }
 
         // Enter key send
         document.getElementById('messageInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
+
+        // Search filter
+        document.getElementById('searchBox').addEventListener('input', (e) => {
+            const search = e.target.value.toLowerCase();
+            document.querySelectorAll('.user-item').forEach(item => {
+                const userName = item.querySelector('.user-name').textContent.toLowerCase();
+                item.style.display = userName.includes(search) ? 'flex' : 'none';
+            });
+        });
+
+        // Initialize
+        loadUsers();
     </script>
 </body>
 </html>
